@@ -52,6 +52,20 @@ CREATE TABLE IF NOT EXISTS images (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
+    username VARCHAR(1000) NOT NULL,
+    password VARCHAR(1000) NOT NULL,
+    email VARCHAR(1000) NOT NULL,
+    fullname VARCHAR(1000) NOT NULL,
+    role SMALLINT NOT NULL,
+    avatar VARCHAR(1000) NOT NULL,
+    notes VARCHAR(1000) NOT NULL,
+    active SMALLINT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 INSERT INTO
     jobs (company, title, date, description)
 VALUES
@@ -83,4 +97,18 @@ VALUES
         'Freelancer',
         'Kalenux',
         'https://emirbaycan.com.tr/images/me.jpeg'
+    );
+
+INSERT INTO
+    users (username, password, email, fullname, role, avatar, notes, active)
+VALUES
+    (
+        'admin',
+        '$2b$12$wC2.kKbuZ9EnAm52GsJfv.U3mxBAxdLqvuP0aTgdnW3UMjm6Nu466',
+        'emir-baycan@hotmail.com',
+        'Emir Baycan',
+        1,
+        'https://emirbaycan.com.tr/images/me.jpeg',
+        'Owner',
+        1
     );

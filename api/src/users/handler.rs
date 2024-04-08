@@ -2,10 +2,12 @@ use serde_json::json;
 use std::sync::Arc;
 
 use axum::{ extract::{ Path, Query, State }, http::StatusCode, response::IntoResponse, Json };
+use bcrypt::{DEFAULT_COST, hash, verify};
 
 use crate::general::schema::FilterOptions;
 use crate::user::{ model::UserModel, schema::{ CreateUserSchema, UpdateUserSchema } };
 use crate::AppState;
+
 
 pub async fn user_list_handler(
     opts: Option<Query<FilterOptions>>,

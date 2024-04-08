@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use axum::{ extract::{ Path, Query, State }, http::StatusCode, response::IntoResponse, Json };
 
-use crate::general::schema::FilterOptions;
+use crate::general::schema::{FilterOptions, Response};
 use crate::project::{ model::ProjectModel, schema::{ CreateProjectSchema, UpdateProjectSchema } };
 use crate::AppState;
 
@@ -15,6 +15,23 @@ pub async fn project_list_handler(
 
     let limit = opts.limit.unwrap_or(10);
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
+    
+    let query_result = sqlx
+        ::query_as!(
+            Response,
+            "SELECT count(id) as count FROM projects"
+        )
+        .fetch_all(&data.db).await
+        .map_err(|e| {
+            let error_response =
+                serde_json::json!({
+                "status": "fail",
+                "message": format!("Something bad happened while fetching all items: {}", e),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?;
+
+    let count = query_result;
 
     let query_result = sqlx
         ::query_as!(
@@ -36,7 +53,7 @@ pub async fn project_list_handler(
     let json_response =
         serde_json::json!({
         "status": "success",
-        "results": query_result.len(),
+        "count": count,
         "items": query_result
     });
     Ok(Json(json_response))

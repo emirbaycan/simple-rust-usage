@@ -14,7 +14,7 @@ use axum::{
     Json,
 };
 
-use crate::general::schema::FilterOptions;
+use crate::general::schema::{FilterOptions, Response};
 use crate::image::{
     model::ImageModel,
     schema::{CreateImageSchema, UpdateImageSchema},
@@ -141,6 +141,26 @@ pub async fn image_list_handler(
     let limit = opts.limit.unwrap_or(10);
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
+    let query_result = sqlx
+        ::query_as!(
+            Response,
+            "SELECT count(id) as count FROM images"
+        )
+        .fetch_one(&data.db).await;
+
+    if query_result.is_err() {
+        let error_response =
+            serde_json::json!({
+            "status": "fail",
+            "message": format!("Something went wrong")
+        });
+        return Err((StatusCode::NOT_FOUND, Json(error_response)));
+    }
+
+    let item = query_result.unwrap();
+
+    let count = item.count;
+
     let query_result = sqlx::query_as!(
         ImageModel,
         "SELECT * FROM images ORDER by created_at LIMIT $1 OFFSET $2",
@@ -162,7 +182,7 @@ pub async fn image_list_handler(
 
     let json_response = serde_json::json!({
         "status": "success",
-        "results": items.len(),
+        "results": count,
         "items": items
     });
     Ok(Json(json_response))

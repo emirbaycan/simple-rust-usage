@@ -1,35 +1,58 @@
 use serde_json::json;
 use std::sync::Arc;
 
-use axum::{ extract::{ Path, Query, State }, http::StatusCode, response::IntoResponse, Json };
-use bcrypt::{DEFAULT_COST, hash, verify};
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
+use bcrypt::{hash, verify, DEFAULT_COST};
 
-use crate::general::schema::FilterOptions;
-use crate::user::{ model::UserModel, schema::{ CreateUserSchema, UpdateUserSchema } };
+use crate::general::schema::{FilterOptions, Response};
+use crate::user::{
+    model::UserModel,
+    schema::{CreateUserSchema, UpdateUserSchema},
+};
 use crate::AppState;
-
 
 pub async fn user_list_handler(
     opts: Option<Query<FilterOptions>>,
-    State(data): State<Arc<AppState>>
+    State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let Query(opts) = opts.unwrap_or_default();
 
     let limit = opts.limit.unwrap_or(10);
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
-    let query_result = sqlx
-        ::query_as!(
-            UserModel,
-            "SELECT * FROM users ORDER by created_at LIMIT $1 OFFSET $2",
-            limit as i32,
-            offset as i32
-        )
-        .fetch_all(&data.db).await;
+    let query_result = sqlx::query_as!(
+        Response,
+        "SELECT count(id) as count FROM users"
+    )
+    .fetch_all(&data.db)
+    .await;
 
     if query_result.is_err() {
-        let error_response =
-            serde_json::json!({
+        let error_response = serde_json::json!({
+            "status": "fail",
+            "message": "Something bad happened while fetching all items",
+        });
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
+    }
+
+    let count = query_result;
+
+    let query_result = sqlx::query_as!(
+        UserModel,
+        "SELECT * FROM users ORDER by created_at LIMIT $1 OFFSET $2",
+        limit as i32,
+        offset as i32
+    )
+    .fetch_all(&data.db)
+    .await;
+
+    if query_result.is_err() {
+        let error_response = serde_json::json!({
             "status": "fail",
             "message": "Something bad happened while fetching all items",
         });
@@ -38,10 +61,9 @@ pub async fn user_list_handler(
 
     let items = query_result.unwrap();
 
-    let json_response =
-        serde_json::json!({
+    let json_response = serde_json::json!({
         "status": "success",
-        "results": items.len(),
+        "count": count,
         "items": items
     });
     Ok(Json(json_response))
@@ -49,7 +71,7 @@ pub async fn user_list_handler(
 
 pub async fn create_user_handler(
     State(data): State<Arc<AppState>>,
-    Json(body): Json<CreateUserSchema>
+    Json(body): Json<CreateUserSchema>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let query_result = sqlx
         ::query_as!(
@@ -68,17 +90,17 @@ pub async fn create_user_handler(
 
     match query_result {
         Ok(item) => {
-            let item_response =
-                json!({"status": "success","data": json!({
+            let item_response = json!({"status": "success","data": json!({
                 "item": item
             })});
 
             return Ok((StatusCode::CREATED, Json(item_response)));
         }
         Err(e) => {
-            if e.to_string().contains("duplicate key value violates unique constraint") {
-                let error_response =
-                    serde_json::json!({
+            if e.to_string()
+                .contains("duplicate key value violates unique constraint")
+            {
+                let error_response = serde_json::json!({
                     "status": "fail",
                     "message": "Note with that title already exists",
                 });
@@ -94,24 +116,22 @@ pub async fn create_user_handler(
 
 pub async fn get_user_handler(
     Path(id): Path<uuid::Uuid>,
-    State(data): State<Arc<AppState>>
+    State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let query_result = sqlx
-        ::query_as!(UserModel, "SELECT * FROM users WHERE id = $1", id)
-        .fetch_one(&data.db).await;
+    let query_result = sqlx::query_as!(UserModel, "SELECT * FROM users WHERE id = $1", id)
+        .fetch_one(&data.db)
+        .await;
 
     match query_result {
         Ok(item) => {
-            let item_response =
-                serde_json::json!({"status": "success","data": serde_json::json!({
+            let item_response = serde_json::json!({"status": "success","data": serde_json::json!({
                 "item": item
             })});
 
             return Ok(Json(item_response));
         }
         Err(_) => {
-            let error_response =
-                serde_json::json!({
+            let error_response = serde_json::json!({
                 "status": "fail",
                 "message": format!("Item with ID: {} not found", id)
             });
@@ -123,15 +143,14 @@ pub async fn get_user_handler(
 pub async fn edit_user_handler(
     Path(id): Path<uuid::Uuid>,
     State(data): State<Arc<AppState>>,
-    Json(body): Json<UpdateUserSchema>
+    Json(body): Json<UpdateUserSchema>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let query_result = sqlx
-        ::query_as!(UserModel, "SELECT * FROM users WHERE id = $1", id)
-        .fetch_one(&data.db).await;
+    let query_result = sqlx::query_as!(UserModel, "SELECT * FROM users WHERE id = $1", id)
+        .fetch_one(&data.db)
+        .await;
 
     if query_result.is_err() {
-        let error_response =
-            serde_json::json!({
+        let error_response = serde_json::json!({
             "status": "fail",
             "message": format!("Item with ID: {} not found", id)
         });
@@ -160,8 +179,7 @@ pub async fn edit_user_handler(
 
     match query_result {
         Ok(item) => {
-            let item_response =
-                serde_json::json!({"status": "success","data": serde_json::json!({
+            let item_response = serde_json::json!({"status": "success","data": serde_json::json!({
                 "item": item
             })});
 
@@ -178,17 +196,16 @@ pub async fn edit_user_handler(
 
 pub async fn delete_user_handler(
     Path(id): Path<uuid::Uuid>,
-    State(data): State<Arc<AppState>>
+    State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let rows_affected = sqlx
-        ::query!("DELETE FROM users WHERE id = $1", id)
-        .execute(&data.db).await
+    let rows_affected = sqlx::query!("DELETE FROM users WHERE id = $1", id)
+        .execute(&data.db)
+        .await
         .unwrap()
         .rows_affected();
 
     if rows_affected == 0 {
-        let error_response =
-            serde_json::json!({
+        let error_response = serde_json::json!({
             "status": "fail",
             "message": format!("Item with ID: {} not found", id)
         });

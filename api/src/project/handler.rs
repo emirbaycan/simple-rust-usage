@@ -21,17 +21,20 @@ pub async fn project_list_handler(
             Response,
             "SELECT count(id) as count FROM projects"
         )
-        .fetch_all(&data.db).await
-        .map_err(|e| {
-            let error_response =
-                serde_json::json!({
-                "status": "fail",
-                "message": format!("Something bad happened while fetching all items: {}", e),
-            });
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
-        })?;
+        .fetch_one(&data.db).await;
 
-    let count = query_result;
+    if query_result.is_err() {
+        let error_response =
+            serde_json::json!({
+            "status": "fail",
+            "message": format!("Something went wrong")
+        });
+        return Err((StatusCode::NOT_FOUND, Json(error_response)));
+    }
+
+    let item = query_result.unwrap();
+
+    let count = item.count;
 
     let query_result = sqlx
         ::query_as!(

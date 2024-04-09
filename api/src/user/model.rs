@@ -10,10 +10,10 @@ pub struct UserModel {
     pub password: String,
     pub email: String,
     pub fullname: String,
-    pub role: i8,
+    pub role: i16,
     pub avatar: String,
     pub notes: String,
-    pub active: i8,
+    pub active: i16,
     #[serde(rename = "createdAt")]
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
     #[serde(rename = "updatedAt")]

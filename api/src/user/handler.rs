@@ -7,9 +7,8 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use bcrypt::{hash, verify, DEFAULT_COST};
 
-use crate::general::schema::{FilterOptions, Response};
+use crate::general::schema::{FilterOptions, Table};
 use crate::user::{
     model::UserModel,
     schema::{CreateUserSchema, UpdateUserSchema},
@@ -25,12 +24,10 @@ pub async fn user_list_handler(
     let limit = opts.limit.unwrap_or(10);
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
-    let query_result = sqlx::query_as!(
-        Response,
-        "SELECT count(id) as count FROM users"
-    )
-    .fetch_all(&data.db)
-    .await;
+    let query_result = sqlx::query_as!(Table, 
+        "SELECT count(id) as count FROM users")
+        .fetch_one(&data.db)
+        .await;
 
     if query_result.is_err() {
         let error_response = serde_json::json!({
@@ -40,7 +37,9 @@ pub async fn user_list_handler(
         return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
     }
 
-    let count = query_result;
+    let item = query_result.unwrap();
+
+    let count = item.count;
 
     let query_result = sqlx::query_as!(
         UserModel,
@@ -81,10 +80,10 @@ pub async fn create_user_handler(
             body.password.to_string(),
             body.email.to_string(),
             body.fullname.to_string(),
-            body.role.to_string(),
+            body.role,
             body.avatar.to_string(),
             body.notes.to_string(),
-            body.active.to_string()
+            body.active
         )
         .fetch_one(&data.db).await;
 

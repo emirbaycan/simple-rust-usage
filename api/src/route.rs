@@ -6,14 +6,18 @@ use axum::{
 };
 
 use crate::{
+    general::handler::health_checker_handler,
+    user::handler::{
+        create_user_handler, delete_user_handler, edit_user_handler,
+        get_user_handler, user_list_handler,
+    },
     detail::handler::{
         create_detail_handler, delete_detail_handler, detail_list_handler, edit_detail_handler,
         get_detail_handler,
     },
-    general::handler::health_checker_handler,
     image::handler::{
         delete_image_handler, edit_image_handler, get_image_handler, image_list_handler,
-        upload_image_handler,
+        upload_image_handler, show_image_handler
     },
     job::handler::{
         create_job_handler, delete_job_handler, edit_job_handler, get_job_handler, job_list_handler,
@@ -32,6 +36,15 @@ use crate::{
 pub fn create_router(app_state: Arc<AppState>) -> Router {
     Router::new()
         .route("/api/healthchecker", get(health_checker_handler))
+        .route("/api/users", get(user_list_handler))
+        .route("/api/users", post(create_user_handler))
+        .route(
+            "/api/users/:id",
+            get(get_user_handler)
+                .patch(edit_user_handler)
+                .delete(delete_user_handler),
+        )
+        .route("/images/:path", get(show_image_handler))
         .route("/api/image", post(upload_image_handler))
         .route("/api/image", get(image_list_handler))
         .route(

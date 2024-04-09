@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use axum::{ extract::{ Path, Query, State }, http::StatusCode, response::IntoResponse, Json };
 
-use crate::general::schema::{FilterOptions, Response};
+use crate::general::schema::{FilterOptions, Table};
 use crate::testimonial::{
     model::TestimonialModel,
     schema::{ CreateTestimonialSchema, UpdateTestimonialSchema },
@@ -21,7 +21,7 @@ pub async fn testimonial_list_handler(
 
     let query_result = sqlx
         ::query_as!(
-            Response,
+            Table,
             "SELECT count(id) as count FROM jobs"
         )
         .fetch_one(&data.db).await;

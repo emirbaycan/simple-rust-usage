@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use axum::{ extract::{ Path, Query, State }, http::StatusCode, response::IntoResponse, Json };
 
-use crate::general::schema::{FilterOptions, Response};
+use crate::general::schema::{FilterOptions, Table};
 use crate::project::{ model::ProjectModel, schema::{ CreateProjectSchema, UpdateProjectSchema } };
 use crate::AppState;
 
@@ -18,7 +18,7 @@ pub async fn project_list_handler(
     
     let query_result = sqlx
         ::query_as!(
-            Response,
+            Table,
             "SELECT count(id) as count FROM projects"
         )
         .fetch_one(&data.db).await;

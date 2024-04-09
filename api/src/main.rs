@@ -5,7 +5,9 @@ mod project;
 mod testimonial;
 mod detail;
 
+mod user;
 mod image;
+
 mod route;
 
 use std::sync::Arc;

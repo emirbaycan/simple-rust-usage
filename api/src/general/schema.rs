@@ -10,6 +10,6 @@ pub struct ParamOptions {
     pub id: String,
 }
 #[derive(Serialize, Deserialize, Debug, Default)]
-pub struct Response {
+pub struct Table {
     pub count: Option<i64>,
 }

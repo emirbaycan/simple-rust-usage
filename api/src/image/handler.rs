@@ -1,4 +1,8 @@
+use futures::TryFutureExt;
+use reqwest::Body;
 use serde_json::json;
+use tokio::io;
+use tokio_util::codec::{BytesCodec, FramedRead};
 use std::sync::Arc;
 
 use axum::extract::Multipart;
@@ -9,17 +13,36 @@ use std::path::PathBuf;
 
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
+    http::{Response, StatusCode},
     response::IntoResponse,
     Json,
 };
 
-use crate::general::schema::{FilterOptions, Response};
+use crate::general::schema::{FilterOptions, Table};
 use crate::image::{
     model::ImageModel,
     schema::{CreateImageSchema, UpdateImageSchema},
 };
 use crate::AppState;
+
+pub async fn show_image_handler(
+    Path(path): Path<String>,
+    State(data): State<Arc<AppState>>
+) ->
+Result<impl IntoResponse, (StatusCode, String)>  {
+    let file_path = format!("images/{}", path);
+
+    let file = match tokio::fs::File::open(&file_path).await {
+        Ok(file) => file,
+        Err(_) => return Err((StatusCode::NOT_FOUND, "Image not found".to_string())),
+    };
+    // read file body stream
+    let stream = FramedRead::new(file, BytesCodec::new());
+    let file_body = reqwest::Body::wrap_stream(stream);
+
+    
+    Ok(Response::new(file_body))
+}
 
 pub async fn upload_image_handler(
     State(data): State<Arc<AppState>>,
@@ -143,7 +166,7 @@ pub async fn image_list_handler(
 
     let query_result = sqlx
         ::query_as!(
-            Response,
+            Table,
             "SELECT count(id) as count FROM images"
         )
         .fetch_one(&data.db).await;

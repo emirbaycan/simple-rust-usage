@@ -12,8 +12,6 @@ pub struct ProjectModel {
     pub demo: String,
     pub git: String,
     pub stacks: Vec<String>,
-    #[serde(rename = "createdAt")]
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
-    #[serde(rename = "updatedAt")]
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
 }

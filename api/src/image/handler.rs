@@ -39,7 +39,6 @@ Result<impl IntoResponse, (StatusCode, String)>  {
     // read file body stream
     let stream = FramedRead::new(file, BytesCodec::new());
     let file_body = reqwest::Body::wrap_stream(stream);
-
     
     Ok(Response::new(file_body))
 }

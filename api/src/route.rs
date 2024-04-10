@@ -45,10 +45,10 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
                 .delete(delete_user_handler),
         )
         .route("/images/:path", get(show_image_handler))
-        .route("/api/image", post(upload_image_handler))
-        .route("/api/image", get(image_list_handler))
+        .route("/api/images", post(upload_image_handler))
+        .route("/api/images", get(image_list_handler))
         .route(
-            "/api/image/:id",
+            "/api/images/:id",
             get(get_image_handler)
                 .patch(edit_image_handler)
                 .delete(delete_image_handler),

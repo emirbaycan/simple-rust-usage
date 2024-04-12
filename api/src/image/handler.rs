@@ -59,52 +59,74 @@ pub async fn upload_image_handler(
             let data = chunk.unwrap();
             file.write_all(&data).unwrap();
         }
+        let item_response = json!({"status": "success","data": json!({
+            "item": json!({
+                "name":name+".webp"
+            })
+        })});
+    
+        return Ok((StatusCode::CREATED, Json(item_response)));
+    }
+    
+    let json_response = serde_json::json!({
+        "status": "success",
+    });
 
-        let query_result = sqlx::query_as!(
-            ImageModel,
-            "INSERT INTO images (name) VALUES ($1) RETURNING *",
-            name + ".webp",
-        )
-        .fetch_one(&data.db)
-        .await;
+    Ok((StatusCode::CREATED, Json(json_response)))
+}
 
-        match query_result {
-            Ok(mut item) => {
-                let file_rename_result =
-                    std::fs::rename(file_path, format!("images/{}.webp", item.id));
+pub async fn create_image_handler(
+    State(data): State<Arc<AppState>>,
+    Json(body): Json<UpdateImageSchema>
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+        // Get the name of the file
+     
+    let file_name = body.name.to_owned().unwrap();
 
-                let name = format!("{}.{}", item.id, "webp");                
-                let query_result = sqlx::query_as!(
-                    ImageModel,
-                    "UPDATE images SET name=$1 WHERE id=$2",
-                    name,
-                    item.id,
-                )
-                .fetch_one(&data.db)
-                .await;
-                item.name = name;
+    let images_dir = PathBuf::from("images");
 
-                let item_response = json!({"status": "success","data": json!({
-                    "item": item
-                })});
+    if(std::path::Path::new("images/file.webp").exists()){
+        let old_file_path = images_dir.join("file.webp");
 
-                return Ok((StatusCode::CREATED, Json(item_response)));
+        let file_rename_result = 
+        std::fs::rename(old_file_path, format!("images/{}", file_name));
+    }else{
+        let old_file_path = images_dir.join(file_name.to_owned());
+
+        let file_rename_result = 
+        std::fs::rename(old_file_path, format!("images/{}", file_name));
+    }
+    
+    let query_result = sqlx::query_as!(
+        ImageModel,
+        "INSERT INTO images (name) VALUES ($1) RETURNING *",
+        file_name,
+    )
+    .fetch_one(&data.db)
+    .await;
+
+    match query_result {
+        Ok(mut item) => {
+            let item_response = json!({"status": "success","data": json!({
+                "item": item
+            })});
+
+            return Ok((StatusCode::CREATED, Json(item_response)));
+        }
+        Err(e) => {
+            if e.to_string()
+                .contains("duplicate key value violates unique constraint")
+            {
+                let error_response = serde_json::json!({
+                    "status": "fail",
+                    "message": "Note with that title already exists",
+                });
+                return Err((StatusCode::CONFLICT, Json(error_response)));
             }
-            Err(e) => {
-                if e.to_string()
-                    .contains("duplicate key value violates unique constraint")
-                {
-                    let error_response = serde_json::json!({
-                        "status": "fail",
-                        "message": "Note with that title already exists",
-                    });
-                    return Err((StatusCode::CONFLICT, Json(error_response)));
-                }
-                return Err((
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({"status": "error","message": format!("{:?}", e)})),
-                ));
-            }
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status": "error","message": format!("{:?}", e)})),
+            ));
         }
     }
     let json_response = serde_json::json!({
@@ -117,7 +139,7 @@ pub async fn upload_image_handler(
 pub async fn edit_image_handler(
     Path(id): Path<uuid::Uuid>,
     State(data): State<Arc<AppState>>,
-    mut multipart: Multipart,
+    Json(body): Json<UpdateImageSchema>
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let query_result = sqlx::query_as!(ImageModel, "SELECT * FROM images WHERE id = $1", id)
         .fetch_one(&data.db)
@@ -131,27 +153,52 @@ pub async fn edit_image_handler(
         return Err((StatusCode::NOT_FOUND, Json(error_response)));
     }
 
-    while let Some(mut field) = multipart.next_field().await.unwrap() {
-        // Get the name of the file
-        let name = field.name().unwrap().to_string();
-
-        let file_path = format!("images/{}.webp", id);
-        let mut file = File::create(&file_path).unwrap();
-
-        // Write the data from the field to the file
-        while let Some(chunk) = field.next().await {
-            let data = chunk.unwrap();
-            file.write_all(&data).unwrap();
-        }
-    }
-
+    let now = chrono::Utc::now();
     let item = query_result.unwrap();
 
-    let json_response = serde_json::json!({"status": "success","data": serde_json::json!({
-        "item": item
-    })});
+    let old_file_name = item.name;
 
-    Ok((StatusCode::OK, Json(json_response)))
+    let images_dir = PathBuf::from("images");
+
+    if(std::path::Path::new("images/file.webp").exists()){
+        let old_file_path = images_dir.join("file.webp");
+
+        let file_rename_result = 
+        std::fs::rename(old_file_path, format!("images/{}", body.name.to_owned().unwrap()));
+    }else{
+
+        let old_file_path = images_dir.join(old_file_name.to_owned());
+
+        let file_rename_result = 
+        std::fs::rename(old_file_path, format!("images/{}", body.name.to_owned().unwrap()));
+    }
+
+    let query_result = sqlx
+        ::query_as!(
+            ImageModel,
+            "UPDATE images SET name = $1, updated_at = $2 WHERE id = $3 RETURNING *",
+            body.name.to_owned().unwrap_or(old_file_name),            
+            now,
+            id
+        )
+        .fetch_one(&data.db).await;
+
+    match query_result {
+        Ok(item) => {
+            let item_response =
+                serde_json::json!({"status": "success","data": serde_json::json!({
+                "item": item
+            })});
+
+            return Ok(Json(item_response));
+        }
+        Err(err) => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status": "error","message": format!("{:?}", err)})),
+            ));
+        }
+    }
 }
 
 pub async fn image_list_handler(
@@ -204,7 +251,7 @@ pub async fn image_list_handler(
 
     let json_response = serde_json::json!({
         "status": "success",
-        "results": count,
+        "count": count,
         "items": items
     });
     Ok(Json(json_response))

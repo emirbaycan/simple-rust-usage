@@ -6,30 +6,45 @@ use axum::{
 };
 
 use crate::{
+    auth::handler::{
+        login_handler
+    },
     detail::handler::{
         create_detail_handler, delete_detail_handler, detail_list_handler, edit_detail_handler,
         get_detail_handler,
-    }, general::handler::{health_checker_handler, update_translation_file}, image::handler::{
-        create_image_handler, delete_image_handler, edit_image_handler, get_image_handler, image_list_handler, show_image_handler, update_all_images_handler, upload_image_handler
-    }, job::handler::{
+    },
+    general::handler::{health_checker_handler, update_translation_file},
+    image::handler::{
+        create_image_handler, delete_image_handler, edit_image_handler, get_image_handler,
+        image_list_handler, show_image_handler, update_all_images_handler, upload_image_handler,
+    },
+    job::handler::{
         create_job_handler, delete_job_handler, edit_job_handler, get_job_handler, job_list_handler,
-    }, project::handler::{
+    },
+    project::handler::{
         create_project_handler, delete_project_handler, edit_project_handler, get_project_handler,
         project_list_handler,
-    }, testimonial::handler::{
+    },
+    testimonial::handler::{
         create_testimonial_handler, delete_testimonial_handler, edit_testimonial_handler,
         get_testimonial_handler, testimonial_list_handler,
-    }, user::handler::{
-        create_user_handler, delete_user_handler, edit_user_handler,
-        get_user_handler, user_list_handler,
-    }, AppState
+    },
+    user::handler::{
+        create_user_handler, delete_user_handler, edit_user_handler, get_user_handler,
+        user_list_handler,
+    },
+    AppState,
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
     Router::new()
         .route("/api/update/all_images", get(update_all_images_handler))
-        .route("/api/update/translation_files", get(update_translation_file))
+        .route(
+            "/api/update/translation_files",
+            get(update_translation_file),
+        )
         .route("/api/healthchecker", get(health_checker_handler))
+        .route("/api/auth/login", post(login_handler))
         .route("/api/users", get(user_list_handler))
         .route("/api/users", post(create_user_handler))
         .route(

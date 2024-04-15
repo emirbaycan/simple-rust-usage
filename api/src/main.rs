@@ -7,6 +7,7 @@ mod detail;
 
 mod user;
 mod image;
+mod auth;
 
 mod route;
 
@@ -24,6 +25,10 @@ use route::create_router;
 use tower_http::cors::CorsLayer;
 
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+
+use time::Duration;
+
+use tower_sessions::{Expiry, MemoryStore, Session, SessionManagerLayer};
 
 pub struct AppState {
     db: Pool<Postgres>,
@@ -60,7 +65,12 @@ async fn main() {
         .allow_credentials(true)
         .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
 
-    let app = create_router(Arc::new(AppState { db: pool.clone() })).layer(cors);
+    let session_store = MemoryStore::default();
+    let session_layer = SessionManagerLayer::new(session_store)
+        .with_secure(false)
+        .with_expiry(Expiry::OnInactivity(Duration::seconds(1800)));
+
+    let app = create_router(Arc::new(AppState { db: pool.clone() })).layer(cors).layer(session_layer);;
 
     println!("🚀 Server started successfully");
     let listener = tokio::net::TcpListener::bind("0.0.0.0:1998").await.unwrap();

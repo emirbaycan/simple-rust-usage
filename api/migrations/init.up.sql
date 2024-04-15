@@ -70,6 +70,13 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS user_roles (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(1000) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 INSERT INTO
     jobs (company, title, date, description)
 VALUES
@@ -77,7 +84,7 @@ VALUES
         'Kalenux',
         'Founder',
         '2020 - 2024',
-        'Founded Kalenux company for operating an ecommerce business'
+        'Founded Kalenux company for operating software business'
     );
 
 INSERT INTO
@@ -120,3 +127,14 @@ VALUES
         'Owner',
         1
     );
+
+INSERT INTO
+    user_roles (name)
+VALUES
+    (
+        'New User',
+    ),(
+        'User',
+    ),(
+        'Admin',
+    ),;

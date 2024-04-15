@@ -36,6 +36,10 @@ CREATE TABLE IF NOT EXISTS testimonials (
 
 CREATE TABLE IF NOT EXISTS details (
     id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
+    title VARCHAR(1000) NOT NULL,
+    logo VARCHAR(1000) NOT NULL,
+    keywords VARCHAR(1000) NOT NULL,
+    site_description VARCHAR(1000) NOT NULL,
     description VARCHAR(1000) NOT NULL,
     about VARCHAR(1000) NOT NULL,
     position VARCHAR(255) NOT NULL,
@@ -89,14 +93,18 @@ VALUES
     );
 
 INSERT INTO
-    details (description, about, position, company, img)
+    details (title, logo, keywords, site_description, description, about, position, company, img)
 VALUES
     (
+        'Emir Baycan',
+        'https://emirbaycan.com.tr/images/logo.webp',
+        'Emir Baycan, web developer, software engineer',
+        'Results-driven Senior Software Developer base in Turkey with over 5 years of professional experience in web and software development. I have worked on various large-scale projects that prioritized responsive design, performance optimization, and cross-functional collaboration. I pride myself on my ability to translate project requirements into visually appealing and efficient solutions.',
         'I''m a software engineer with <span class=''underline''>over 5 years of experience</span>, specializing in developing systems, interfaces, bots, and technological solutions. I pride myself on my ability to translate project requirements into visually appealing and efficient solutions.',
         'Hey there, I''m Emir Baycan. I hold long variety of skills and currently exploring the world of Mobile App Design and Development. Throughout my career, I''ve been involved in various large-scale projects, prioritizing responsive design, performance optimization, and cross-functional collaboration. I love turning a project''s ''wish list'' into something that not only looks great but also performs well.',
         'Freelancer',
         'Kalenux',
-        'https://emirbaycan.com.tr/images/me.jpeg'
+        'https://emirbaycan.com.tr/images/me.webp'
     );
 
 INSERT INTO
@@ -108,7 +116,7 @@ VALUES
         'emir-baycan@hotmail.com',
         'Emir Baycan',
         1,
-        'https://emirbaycan.com.tr/images/me.jpeg',
+        'https://emirbaycan.com.tr/images/me.webp',
         'Owner',
         1
     );

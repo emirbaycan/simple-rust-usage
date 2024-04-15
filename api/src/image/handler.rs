@@ -1,9 +1,9 @@
 use futures::TryFutureExt;
 use reqwest::Body;
 use serde_json::json;
+use std::sync::Arc;
 use tokio::io;
 use tokio_util::codec::{BytesCodec, FramedRead};
-use std::sync::Arc;
 
 use axum::extract::Multipart;
 use futures_util::stream::StreamExt;
@@ -27,9 +27,8 @@ use crate::AppState;
 
 pub async fn show_image_handler(
     Path(path): Path<String>,
-    State(data): State<Arc<AppState>>
-) ->
-Result<impl IntoResponse, (StatusCode, String)>  {
+    State(data): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
     let file_path = format!("images/{}", path);
 
     let file = match tokio::fs::File::open(&file_path).await {
@@ -39,7 +38,7 @@ Result<impl IntoResponse, (StatusCode, String)>  {
     // read file body stream
     let stream = FramedRead::new(file, BytesCodec::new());
     let file_body = reqwest::Body::wrap_stream(stream);
-    
+
     Ok(Response::new(file_body))
 }
 
@@ -64,10 +63,10 @@ pub async fn upload_image_handler(
                 "name":name+".webp"
             })
         })});
-    
+
         return Ok((StatusCode::CREATED, Json(item_response)));
     }
-    
+
     let json_response = serde_json::json!({
         "status": "success",
     });
@@ -77,26 +76,24 @@ pub async fn upload_image_handler(
 
 pub async fn create_image_handler(
     State(data): State<Arc<AppState>>,
-    Json(body): Json<UpdateImageSchema>
+    Json(body): Json<UpdateImageSchema>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-        // Get the name of the file
-     
+    // Get the name of the file
+
     let file_name = body.name.to_owned().unwrap();
 
     let images_dir = PathBuf::from("images");
 
-    if(std::path::Path::new("images/file.webp").exists()){
+    if (std::path::Path::new("images/file.webp").exists()) {
         let old_file_path = images_dir.join("file.webp");
 
-        let file_rename_result = 
-        std::fs::rename(old_file_path, format!("images/{}", file_name));
-    }else{
+        let file_rename_result = std::fs::rename(old_file_path, format!("images/{}", file_name));
+    } else {
         let old_file_path = images_dir.join(file_name.to_owned());
 
-        let file_rename_result = 
-        std::fs::rename(old_file_path, format!("images/{}", file_name));
+        let file_rename_result = std::fs::rename(old_file_path, format!("images/{}", file_name));
     }
-    
+
     let query_result = sqlx::query_as!(
         ImageModel,
         "INSERT INTO images (name) VALUES ($1) RETURNING *",
@@ -139,7 +136,7 @@ pub async fn create_image_handler(
 pub async fn edit_image_handler(
     Path(id): Path<uuid::Uuid>,
     State(data): State<Arc<AppState>>,
-    Json(body): Json<UpdateImageSchema>
+    Json(body): Json<UpdateImageSchema>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let query_result = sqlx::query_as!(ImageModel, "SELECT * FROM images WHERE id = $1", id)
         .fetch_one(&data.db)
@@ -160,33 +157,35 @@ pub async fn edit_image_handler(
 
     let images_dir = PathBuf::from("images");
 
-    if(std::path::Path::new("images/file.webp").exists()){
+    if (std::path::Path::new("images/file.webp").exists()) {
         let old_file_path = images_dir.join("file.webp");
 
-        let file_rename_result = 
-        std::fs::rename(old_file_path, format!("images/{}", body.name.to_owned().unwrap()));
-    }else{
-
+        let file_rename_result = std::fs::rename(
+            old_file_path,
+            format!("images/{}", body.name.to_owned().unwrap()),
+        );
+    } else {
         let old_file_path = images_dir.join(old_file_name.to_owned());
 
-        let file_rename_result = 
-        std::fs::rename(old_file_path, format!("images/{}", body.name.to_owned().unwrap()));
+        let file_rename_result = std::fs::rename(
+            old_file_path,
+            format!("images/{}", body.name.to_owned().unwrap()),
+        );
     }
 
-    let query_result = sqlx
-        ::query_as!(
-            ImageModel,
-            "UPDATE images SET name = $1, updated_at = $2 WHERE id = $3 RETURNING *",
-            body.name.to_owned().unwrap_or(old_file_name),            
-            now,
-            id
-        )
-        .fetch_one(&data.db).await;
+    let query_result = sqlx::query_as!(
+        ImageModel,
+        "UPDATE images SET name = $1, updated_at = $2 WHERE id = $3 RETURNING *",
+        body.name.to_owned().unwrap_or(old_file_name),
+        now,
+        id
+    )
+    .fetch_one(&data.db)
+    .await;
 
     match query_result {
         Ok(item) => {
-            let item_response =
-                serde_json::json!({"status": "success","data": serde_json::json!({
+            let item_response = serde_json::json!({"status": "success","data": serde_json::json!({
                 "item": item
             })});
 
@@ -210,16 +209,12 @@ pub async fn image_list_handler(
     let limit = opts.limit.unwrap_or(10);
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
-    let query_result = sqlx
-        ::query_as!(
-            Table,
-            "SELECT count(id) as count FROM images"
-        )
-        .fetch_one(&data.db).await;
+    let query_result = sqlx::query_as!(Table, "SELECT count(id) as count FROM images")
+        .fetch_one(&data.db)
+        .await;
 
     if query_result.is_err() {
-        let error_response =
-            serde_json::json!({
+        let error_response = serde_json::json!({
             "status": "fail",
             "message": format!("Something went wrong")
         });
@@ -324,4 +319,43 @@ pub async fn delete_image_handler(
     }
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn update_all_images_handler(
+    State(data): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let images = std::path::Path::new("images");
+
+    let paths = std::fs::read_dir(images).unwrap();
+
+    for path in paths {
+        if let Ok(entry) = path {
+            if let Some(file_name) = entry.path().file_name() {
+                if let Some(file_name_str) = file_name.to_str() {
+                    let query_result = sqlx::query_as!(
+                        ImageModel,
+                        "SELECT * FROM images WHERE name = $1",
+                        file_name_str
+                    )
+                    .fetch_one(&data.db)
+                    .await;
+
+                    match query_result {
+                        Ok(item) => {
+                        }
+                        Err(_) => {
+                            let query_result = sqlx::query_as!(
+                                ImageModel,
+                                "INSERT INTO images (name) VALUES ($1) RETURNING *",
+                                file_name_str,
+                            )
+                            .fetch_one(&data.db)
+                            .await;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok(StatusCode::OK)
 }

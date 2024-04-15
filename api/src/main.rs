@@ -49,9 +49,11 @@ async fn main() {
         }
     };
 
-    let images = Path::new("./images");
-    fs::create_dir(images).ok();
-
+    let images = Path::new("images");
+    if(!images.exists()){
+        fs::create_dir(images).ok();
+    }
+ 
     let cors = CorsLayer::new()
         .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
         .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
@@ -63,4 +65,5 @@ async fn main() {
     println!("🚀 Server started successfully");
     let listener = tokio::net::TcpListener::bind("0.0.0.0:1998").await.unwrap();
     axum::serve(listener, app).await.unwrap();
+    
 }

@@ -72,7 +72,11 @@ pub async fn create_detail_handler(
     let query_result = sqlx
         ::query_as!(
             DetailModel,
-            "INSERT INTO details (description,about,position,company,img) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+            "INSERT INTO details (title,logo,keywords,site_description,description,about,position,company,img) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
+            body.title.to_string(),
+            body.logo.to_string(),
+            body.keywords.to_string(),
+            body.site_description.to_string(),
             body.description.to_string(),
             body.about.to_string(),
             body.position.to_string(),
@@ -158,7 +162,11 @@ pub async fn edit_detail_handler(
     let query_result = sqlx
         ::query_as!(
             DetailModel,
-            "UPDATE details SET description = $1, about = $2, position = $3, company = $4, img = $5, updated_at = $6 WHERE id = $7 RETURNING *",
+            "UPDATE details SET title = $1, logo = $2, keywords = $3, site_description = $4, description = $5, about = $6, position = $7, company = $8, img = $9, updated_at = $10 WHERE id = $11 RETURNING *",
+            body.title.to_owned().unwrap_or(item.title),
+            body.logo.to_owned().unwrap_or(item.logo),
+            body.keywords.to_owned().unwrap_or(item.keywords),
+            body.site_description.to_owned().unwrap_or(item.site_description),
             body.description.to_owned().unwrap_or(item.description),
             body.about.to_owned().unwrap_or(item.about),
             body.position.to_owned().unwrap_or(item.position),

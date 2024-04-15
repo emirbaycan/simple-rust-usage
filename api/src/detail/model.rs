@@ -6,6 +6,10 @@ use uuid::Uuid;
 #[allow(non_snake_case)]
 pub struct DetailModel {
     pub id: Uuid,
+    pub title: String,
+    pub logo: String,
+    pub keywords: String,
+    pub site_description: String,
     pub description: String,
     pub about: String,
     pub position: String,

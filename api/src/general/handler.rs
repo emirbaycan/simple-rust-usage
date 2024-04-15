@@ -7,10 +7,6 @@ use axum::{
 
 use serde_json::{json, Value};
 
-use crate::detail::model::DetailModel;
-use crate::job::model::JobModel;
-use crate::project::model::ProjectModel;
-use crate::testimonial::model::TestimonialModel;
 use crate::AppState;
 use std::sync::Arc;
 use std::collections::HashMap;

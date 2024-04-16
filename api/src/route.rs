@@ -6,94 +6,40 @@ use axum::{
 };
 
 use crate::{
-    auth::handler::{
-        login_handler
+    auth::route::auth_router,
+    detail::{
+        handler::{
+            create_detail_handler, delete_detail_handler, detail_list_handler, edit_detail_handler,
+            get_detail_handler,
+        },
+        route::detail_router,
     },
-    detail::handler::{
-        create_detail_handler, delete_detail_handler, detail_list_handler, edit_detail_handler,
-        get_detail_handler,
-    },
-    general::handler::{health_checker_handler, update_translation_file},
-    image::handler::{
-        create_image_handler, delete_image_handler, edit_image_handler, get_image_handler,
-        image_list_handler, show_image_handler, update_all_images_handler, upload_image_handler,
-    },
-    job::handler::{
-        create_job_handler, delete_job_handler, edit_job_handler, get_job_handler, job_list_handler,
-    },
-    project::handler::{
-        create_project_handler, delete_project_handler, edit_project_handler, get_project_handler,
-        project_list_handler,
-    },
-    testimonial::handler::{
-        create_testimonial_handler, delete_testimonial_handler, edit_testimonial_handler,
-        get_testimonial_handler, testimonial_list_handler,
-    },
-    user::handler::{
-        create_user_handler, delete_user_handler, edit_user_handler, get_user_handler,
-        user_list_handler,
-    },
+    general::route::general_router,
+    image::route::image_router,
+    job::route::job_router,
+    project::route::project_router,
+    testimonial::route::testimonial_router,
+    user::route::user_router,
     AppState,
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
+    let detail_route = detail_router(app_state.clone());
+    let general_route = general_router(app_state.clone());
+    let image_route = image_router(app_state.clone());
+    let auth_route = auth_router(app_state.clone());
+    let job_route = job_router(app_state.clone());
+    let project_route = project_router(app_state.clone());
+    let testimonial_route = testimonial_router(app_state.clone());
+    let user_route = user_router(app_state);
+
     Router::new()
-        .route("/api/update/all_images", get(update_all_images_handler))
-        .route(
-            "/api/update/translation_files",
-            get(update_translation_file),
-        )
-        .route("/api/healthchecker", get(health_checker_handler))
-        .route("/api/auth/login", post(login_handler))
-        .route("/api/users", get(user_list_handler))
-        .route("/api/users", post(create_user_handler))
-        .route(
-            "/api/users/:id",
-            get(get_user_handler)
-                .patch(edit_user_handler)
-                .delete(delete_user_handler),
-        )
-        .route("/images/:path", get(show_image_handler))
-        .route("/api/image", post(upload_image_handler))
-        .route("/api/images", post(create_image_handler))
-        .route("/api/images", get(image_list_handler))
-        .route(
-            "/api/images/:id",
-            get(get_image_handler)
-                .patch(edit_image_handler)
-                .delete(delete_image_handler),
-        )
-        .route("/api/jobs", get(job_list_handler))
-        .route("/api/jobs", post(create_job_handler))
-        .route(
-            "/api/jobs/:id",
-            get(get_job_handler)
-                .patch(edit_job_handler)
-                .delete(delete_job_handler),
-        )
-        .route("/api/projects", get(project_list_handler))
-        .route("/api/projects", post(create_project_handler))
-        .route(
-            "/api/projects/:id",
-            get(get_project_handler)
-                .patch(edit_project_handler)
-                .delete(delete_project_handler),
-        )
-        .route("/api/testimonials", get(testimonial_list_handler))
-        .route("/api/testimonials", post(create_testimonial_handler))
-        .route(
-            "/api/testimonials/:id",
-            get(get_testimonial_handler)
-                .patch(edit_testimonial_handler)
-                .delete(delete_testimonial_handler),
-        )
-        .route("/api/details", get(detail_list_handler))
-        .route("/api/details", post(create_detail_handler))
-        .route(
-            "/api/details/:id",
-            get(get_detail_handler)
-                .patch(edit_detail_handler)
-                .delete(delete_detail_handler),
-        )
-        .with_state(app_state)
+        .nest("/", detail_route)
+        .nest("/", general_route)
+        .nest("/", image_route)
+        .nest("/", auth_route)
+        .nest("/", job_route)
+        .nest("/", project_route)
+        .nest("/", testimonial_route)
+        .nest("/", user_route)
 }

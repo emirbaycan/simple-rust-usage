@@ -15,11 +15,11 @@ use crate::{
 
 pub fn image_router(app_state: Arc<AppState>) -> Router {
     Router::new()
-        .route("/api/image", post(upload_image_handler))
-        .route("/api/images", post(create_image_handler))
-        .route("/api/images", get(image_list_handler))
+        .route("/image", post(upload_image_handler))
+        .route("/images", post(create_image_handler))
+        .route("/images", get(image_list_handler))
         .route(
-            "/api/images/:id",
+            "/images/:id",
             get(get_image_handler)
                 .patch(edit_image_handler)
                 .delete(delete_image_handler),
@@ -29,7 +29,7 @@ pub fn image_router(app_state: Arc<AppState>) -> Router {
 
 pub fn admin_image_router(app_state: Arc<AppState>) -> Router {
     Router::new()
-        .route("/api/update/all_images", get(update_all_images_handler))
+        .route("/update/all_images", get(update_all_images_handler))
         .with_state(app_state)
 }
 

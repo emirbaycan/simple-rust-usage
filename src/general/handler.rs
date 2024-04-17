@@ -1,6 +1,6 @@
 use axum::{
-    extract::{Path, Query, State},
-    http::{Response, StatusCode},
+    extract::State,
+    http::StatusCode,
     response::IntoResponse,
     Json,
 };
@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 use crate::AppState;
 use std::sync::Arc;
 use std::collections::HashMap;
-use sqlx::{postgres::{PgColumn, PgRow}, prelude::*, Column}; // Import Column trait
+use sqlx::{prelude::*, Column}; // Import Column trait
 use tokio::io::AsyncWriteExt;
 
 async fn get_table(table: &str, data: Arc<AppState>) -> Value  {
@@ -58,7 +58,7 @@ pub async fn update_translation_file(
 
     let json_response = serde_json::to_string(&file_data).unwrap();
 
-    file.write_all(json_response.as_bytes()).await;
+    file.write_all(json_response.as_bytes()).await.unwrap();
 
     Ok((StatusCode::OK, Json(json_response)))
 }

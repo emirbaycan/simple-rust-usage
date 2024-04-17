@@ -15,10 +15,10 @@ use crate::{
 
 pub fn testimonial_router(app_state: Arc<AppState>) -> Router {
     Router::new()
-        .route("/api/testimonials", get(testimonial_list_handler))
-        .route("/api/testimonials", post(create_testimonial_handler))
+        .route("/testimonials", get(testimonial_list_handler))
+        .route("/testimonials", post(create_testimonial_handler))
         .route(
-            "/api/testimonials/:id",
+            "/testimonials/:id",
             get(get_testimonial_handler)
                 .patch(edit_testimonial_handler)
                 .delete(delete_testimonial_handler),

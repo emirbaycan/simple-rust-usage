@@ -16,15 +16,11 @@ use axum::{
 };
 
 use crate::general::schema::{FilterOptions, Table};
-use crate::image::{
-    model::ImageModel,
-    schema::UpdateImageSchema,
-};
+use crate::image::{model::ImageModel, schema::UpdateImageSchema};
 use crate::AppState;
 
 pub async fn show_image_handler(
     Path(path): Path<String>,
-    State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let file_path = format!("images/{}", path);
 
@@ -40,7 +36,6 @@ pub async fn show_image_handler(
 }
 
 pub async fn upload_image_handler(
-    State(data): State<Arc<AppState>>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     while let Some(mut field) = multipart.next_field().await.unwrap() {
@@ -81,14 +76,14 @@ pub async fn create_image_handler(
 
     let images_dir = PathBuf::from("images");
 
-    if (std::path::Path::new("images/file.webp").exists()) {
+    if std::path::Path::new("images/file.webp").exists() {
         let old_file_path = images_dir.join("file.webp");
 
-        let file_rename_result = std::fs::rename(old_file_path, format!("images/{}", file_name));
+        std::fs::rename(old_file_path, format!("images/{}", file_name)).unwrap();
     } else {
         let old_file_path = images_dir.join(file_name.to_owned());
 
-        let file_rename_result = std::fs::rename(old_file_path, format!("images/{}", file_name));
+        std::fs::rename(old_file_path, format!("images/{}", file_name)).unwrap();
     }
 
     let query_result = sqlx::query_as!(
@@ -100,7 +95,7 @@ pub async fn create_image_handler(
     .await;
 
     match query_result {
-        Ok(mut item) => {
+        Ok(item) => {
             let item_response = json!({"status": "success","data": json!({
                 "item": item
             })});
@@ -123,11 +118,6 @@ pub async fn create_image_handler(
             ));
         }
     }
-    let json_response = serde_json::json!({
-        "status": "success",
-    });
-
-    Ok((StatusCode::CREATED, Json(json_response)))
 }
 
 pub async fn edit_image_handler(
@@ -154,20 +144,22 @@ pub async fn edit_image_handler(
 
     let images_dir = PathBuf::from("images");
 
-    if (std::path::Path::new("images/file.webp").exists()) {
+    if std::path::Path::new("images/file.webp").exists() {
         let old_file_path = images_dir.join("file.webp");
 
-        let file_rename_result = std::fs::rename(
+        std::fs::rename(
             old_file_path,
             format!("images/{}", body.name.to_owned().unwrap()),
-        );
+        )
+        .unwrap();
     } else {
         let old_file_path = images_dir.join(old_file_name.to_owned());
 
-        let file_rename_result = std::fs::rename(
+        std::fs::rename(
             old_file_path,
             format!("images/{}", body.name.to_owned().unwrap()),
-        );
+        )
+        .unwrap();
     }
 
     let query_result = sqlx::query_as!(
@@ -338,16 +330,16 @@ pub async fn update_all_images_handler(
                     .await;
 
                     match query_result {
-                        Ok(item) => {
-                        }
+                        Ok(_item) => {}
                         Err(_) => {
-                            let query_result = sqlx::query_as!(
+                            sqlx::query_as!(
                                 ImageModel,
                                 "INSERT INTO images (name) VALUES ($1) RETURNING *",
                                 file_name_str,
                             )
                             .fetch_one(&data.db)
-                            .await;
+                            .await
+                            .unwrap();
                         }
                     }
                 }

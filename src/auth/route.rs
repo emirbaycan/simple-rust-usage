@@ -5,7 +5,7 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Response},
     routing::{get, post},
-    Extension, Json, Router,
+    Json, Router,
 };
 use reqwest::StatusCode;
 use tower_sessions::Session;
@@ -20,7 +20,7 @@ pub async fn authenticate(
     next: Next,
 ) -> Result<Response, (StatusCode, impl IntoResponse)> {
     // Check if the user is logged in
-    if let Ok(Some(logged_in)) = session.get::<usize>("logged_in").await {
+    if let Ok(Some(_logged_in)) = session.get::<usize>("logged_in").await {
         // If logged in, continue processing the request
         let response = next.run(request).await;
         Ok(response)
@@ -38,7 +38,7 @@ pub async fn auth_admin(
     next: Next,
 ) -> Result<Response, (StatusCode, impl IntoResponse)> {
     // Check if the user is logged in
-    if let Ok(Some(logged_in)) = session.get::<usize>("logged_in").await {
+    if let Ok(Some(_logged_in)) = session.get::<usize>("logged_in").await {
         
     } else {
         let error_response = serde_json::json!({
@@ -48,7 +48,7 @@ pub async fn auth_admin(
     }
 
     if let Ok(Some(role)) = session.get::<usize>("role").await {
-        if role != 1 {
+        if role != 3 {
             let error_response = serde_json::json!({
                 "error": "Unauthorized",
             });
@@ -68,8 +68,8 @@ pub async fn auth_admin(
 
 pub fn auth_router(app_state: Arc<AppState>) -> Router {
     Router::new()
-        .route("/api/auth/login", post(login_handler))
-        .route("/api/auth/test_login", get(test_login_handler))
-        .route("/api/auth/logout", get(logout_handler))
+        .route("/auth/login", post(login_handler))
+        .route("/auth/test_login", get(test_login_handler))
+        .route("/auth/logout", get(logout_handler))
         .with_state(app_state)
 }

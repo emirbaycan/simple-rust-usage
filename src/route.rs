@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use axum::{middleware, Router};
-use tower_sessions::SessionStore;
 
 use crate::{
     auth::route::{auth_admin, auth_router}, detail::route::detail_router, general::route::general_router,
@@ -21,7 +20,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
     let user_route = user_router(app_state.clone());
 
     
-    let admin_prefix = "/admin";
+    let admin_prefix = "/api/admin";
 
     let admin_route = Router::new()
     .nest(admin_prefix, detail_route)

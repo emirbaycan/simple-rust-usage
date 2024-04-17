@@ -22,6 +22,8 @@ pub struct User {
     pub avatar: String,
     pub active: i16,
 }
+
+#[derive(Debug, Default, FromRow, Deserialize, Serialize)]
 pub struct NewUser {
     pub id: Uuid
 }

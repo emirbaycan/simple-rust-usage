@@ -12,17 +12,6 @@ use std::sync::Arc;
 use std::collections::HashMap;
 use sqlx::{postgres::{PgColumn, PgRow}, prelude::*, Column}; // Import Column trait
 use tokio::io::AsyncWriteExt;
- 
-pub async fn health_checker_handler() -> impl IntoResponse {
-    const MESSAGE: &str = "Simple CRUD API with Rust, SQLX, Postgres,and Axum";
-
-    let json_response = serde_json::json!({
-        "status": "success",
-        "message": MESSAGE
-    });
-
-    Json(json_response)
-}
 
 async fn get_table(table: &str, data: Arc<AppState>) -> Value  {
     let excludes = ["id","created_at","updated_at"];

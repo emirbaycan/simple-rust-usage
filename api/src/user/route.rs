@@ -25,6 +25,6 @@ pub fn user_router(app_state: Arc<AppState>) -> Router {
         .patch(edit_user_handler)
         .delete(delete_user_handler),
     )
-    .layer(middleware::from_fn(authenticate))
     .with_state(app_state)
+    .layer(middleware::from_fn(authenticate))
 }

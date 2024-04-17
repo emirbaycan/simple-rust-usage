@@ -32,6 +32,40 @@ pub async fn authenticate(
     }
 }
 
+pub async fn auth_admin(
+    session: Session,
+    request: Request,
+    next: Next,
+) -> Result<Response, (StatusCode, impl IntoResponse)> {
+    // Check if the user is logged in
+    if let Ok(Some(logged_in)) = session.get::<usize>("logged_in").await {
+        
+    } else {
+        let error_response = serde_json::json!({
+            "error": "Unauthorized",
+        });
+        return Err((StatusCode::UNAUTHORIZED, Json(error_response)));
+    }
+
+    if let Ok(Some(role)) = session.get::<usize>("role").await {
+        if role != 1 {
+            let error_response = serde_json::json!({
+                "error": "Unauthorized",
+            });
+            return Err((StatusCode::UNAUTHORIZED, Json(error_response)));
+        }
+    } else {
+        let error_response = serde_json::json!({
+            "error": "Session expired relogin",
+        });
+
+        return Err((StatusCode::UNAUTHORIZED, Json(error_response)));
+    }
+
+    let response = next.run(request).await;
+    Ok(response)
+}
+
 pub fn auth_router(app_state: Arc<AppState>) -> Router {
     Router::new()
         .route("/api/auth/login", post(login_handler))

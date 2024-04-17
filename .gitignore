@@ -1,5 +1,5 @@
 target
 backup
-images/*
+images
 .vscode
 .env

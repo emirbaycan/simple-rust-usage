@@ -11,7 +11,7 @@ pub struct Login {
 #[derive(Default, Deserialize, Serialize)]
 pub struct Logged(bool);
 
-#[derive(Default, FromRow, Deserialize, Serialize)]
+#[derive(Debug, Default, FromRow, Deserialize, Serialize)]
 pub struct User {
     pub id: Uuid,
     pub email: String,

@@ -18,14 +18,16 @@ use tower_sessions::Session;
 use super::schema::User;
 
 pub async fn login_handler(
-    opts: Option<Query<Login>>,
     session: Session,
     State(data): State<Arc<AppState>>,
+    Json(body): Json<Login>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let Query(opts) = opts.unwrap_or_default();
 
-    let email = opts.email.unwrap();
-    let password = opts.password.unwrap();
+    let test = session.get::<usize>("test").await.unwrap();
+    println!("User found in session: {:?}", test);
+
+    let email = body.email.unwrap();
+    let password = body.password.unwrap();
 
     let query_result = sqlx::query_as!(
         User,
@@ -67,14 +69,14 @@ pub async fn login_handler(
         "active":item.active
     });
 
-    session.insert("user", user).await.unwrap();
+    session.insert("test", 1).await.unwrap();
 
     let json_response = serde_json::json!({
         "status": "success",
         "data": item
     });
 
-    Ok(Json(json_response))
+    Ok((StatusCode::OK, Json(json_response)))
 }
 
 pub async fn register_handler(
@@ -116,6 +118,19 @@ pub async fn register_handler(
 
     match query_result {
         Ok(item) => {
+            let user = serde_json::json!({
+                "id":item.id,
+                "email":item.email,
+                "username":item.username,
+                "fullname":item.fullname,
+                "password":"",
+                "role":item.role,
+                "avatar":item.avatar,
+                "active":item.active
+            });
+
+            session.insert("user", user).await.unwrap();
+
             let item_response = json!({"status": "success","data": json!({
                 "item": item
             })});

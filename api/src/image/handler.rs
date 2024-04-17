@@ -1,8 +1,5 @@
-use futures::TryFutureExt;
-use reqwest::Body;
 use serde_json::json;
 use std::sync::Arc;
-use tokio::io;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
 use axum::extract::Multipart;
@@ -21,7 +18,7 @@ use axum::{
 use crate::general::schema::{FilterOptions, Table};
 use crate::image::{
     model::ImageModel,
-    schema::{CreateImageSchema, UpdateImageSchema},
+    schema::UpdateImageSchema,
 };
 use crate::AppState;
 

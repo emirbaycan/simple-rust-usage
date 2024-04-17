@@ -17,15 +17,23 @@ use tower_sessions::Session;
 
 use super::schema::User;
 
+pub async fn test_login_handler(
+    session: Session,
+    State(data): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    session.insert("logged_in",1).await.unwrap();
+
+    let json_response = serde_json::json!({
+        "status": "success",
+    });
+    Ok((StatusCode::OK, Json(json_response)))
+}
+
 pub async fn login_handler(
     session: Session,
     State(data): State<Arc<AppState>>,
     Json(body): Json<Login>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-
-    let test = session.get::<usize>("test").await.unwrap();
-    println!("User found in session: {:?}", test);
-
     let email = body.email.unwrap();
     let password = body.password.unwrap();
 
@@ -69,11 +77,24 @@ pub async fn login_handler(
         "active":item.active
     });
 
-    session.insert("test", 1).await.unwrap();
-
     let json_response = serde_json::json!({
         "status": "success",
         "data": item
+    });
+
+    session.insert("logged_in",1).await.unwrap();
+
+    Ok((StatusCode::OK, Json(json_response)))
+}
+
+pub async fn logout_handler(
+    session: Session,
+    State(data): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    session.flush().await.unwrap();
+
+    let json_response = serde_json::json!({
+        "status": "success"
     });
 
     Ok((StatusCode::OK, Json(json_response)))

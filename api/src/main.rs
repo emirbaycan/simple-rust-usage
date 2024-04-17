@@ -28,7 +28,7 @@ use sqlx::{Pool, Postgres};
 
 use time::Duration;
 
-use tower_sessions::{session_store::ExpiredDeletion, Expiry, MemoryStore, SessionManagerLayer};
+use tower_sessions::{session_store::ExpiredDeletion, Expiry, SessionManagerLayer};
 use tower_sessions_sqlx_store::{sqlx::PgPool, PostgresStore};
 
 pub struct AppState {
@@ -48,14 +48,18 @@ async fn main() {
     let pool = PgPool::connect(&database_url).await.unwrap();
  
     let session_store = PostgresStore::new(pool.clone());
-    session_store.migrate().await.unwrap();
+    let session_store_result = session_store.migrate().await;
 
+    if session_store_result.is_err() {
+        println!("Session store couldnt migrate");
+    }
+     
     let deletion_task = tokio::task::spawn(
         session_store
             .clone()
             .continuously_delete_expired(tokio::time::Duration::from_secs(60)),
-    );
-
+    );     
+ 
     let session_layer = SessionManagerLayer::new(session_store)
         .with_secure(true)
         .with_expiry(Expiry::OnInactivity(Duration::seconds(1800)));
@@ -65,13 +69,13 @@ async fn main() {
         .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
         .allow_credentials(true)
         .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
-
+ 
     let app = create_router(Arc::new(AppState { db: pool.clone() })).layer(session_layer).layer(cors);
 
     println!("🚀 Server started successfully");
     let listener = tokio::net::TcpListener::bind("0.0.0.0:1998").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app.into_make_service()).await.unwrap();
 
     deletion_task.await.unwrap().unwrap();
-    
+      
 }

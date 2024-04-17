@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use axum::Router;
+use tower_sessions::SessionStore;
 
 use crate::{
     auth::route::auth_router,
@@ -26,12 +27,12 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
     let user_route = user_router(app_state);
 
     Router::new()
-        .nest("/", detail_route)
-        .nest("/", general_route)
-        .nest("/", image_route)
-        .nest("/", auth_route)
-        .nest("/", job_route)
-        .nest("/", project_route)
-        .nest("/", testimonial_route)
-        .nest("/", user_route)
+        .merge(detail_route)
+        .merge(general_route)
+        .merge(image_route)
+        .merge(auth_route)
+        .merge(job_route)
+        .merge(project_route)
+        .merge(testimonial_route)
+        .merge(user_route)
 }

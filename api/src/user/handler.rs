@@ -17,8 +17,8 @@ use crate::user::{
 use crate::AppState;
 
 pub async fn user_list_handler(
-    opts: Option<Query<FilterOptions>>,
     State(data): State<Arc<AppState>>,
+    opts: Option<Query<FilterOptions>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let Query(opts) = opts.unwrap_or_default();
 

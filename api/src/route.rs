@@ -17,7 +17,7 @@ use crate::{
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
     
-    let detail_route = detail_router(app_state.clone());
+    let detail_route: Router = detail_router(app_state.clone());
     let general_route = general_router(app_state.clone());
     let image_route = image_router(app_state.clone());
     let auth_route = auth_router(app_state.clone());

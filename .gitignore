@@ -1,12 +1,5 @@
-<<<<<<< HEAD
-*/target
-*/backup
-*/images/*
-/.vscode
-=======
 target
 backup
 images/*
 .vscode
->>>>>>> 2ebde29 (structure changes)
 .env
